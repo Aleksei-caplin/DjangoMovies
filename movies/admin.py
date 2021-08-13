@@ -16,8 +16,8 @@ class MovieAdminForm(forms.ModelForm):
 
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
-    list_display = ("id", "name", "url")
-    list_display_links = ("name",)
+    list_display = ("name", "url", "id")
+    #list_display_links = ("name",)
 
 
 class ReviewInline(admin.TabularInline):
@@ -47,6 +47,7 @@ class MovieAdmin(admin.ModelAdmin):
     save_as = True
     form = MovieAdminForm
     list_editable = ("draft",)
+    actions = ["publish", "unpublish"]
     readonly_fields = ("get_image",)
     #fields = (("actors", "directors", "genres"),)
     fieldsets = (
@@ -73,6 +74,31 @@ class MovieAdmin(admin.ModelAdmin):
 
     def get_image(self, obj):
         return mark_safe(f'<img src={obj.poster.url} width="100" height="110"')
+
+    def unpublish(self, request, queryset):
+        """ Снять с публикации """
+        row_update = queryset.update(draft=True)
+        if row_update == 1:
+            message_bit = "1 запись обновлена"
+        else:
+            message_bit = f'{row_update} записей обновлено'
+        self.message_user(request, f"{message_bit}")
+
+    def publish(self, request, queryset):
+        """ Публикация """
+        row_update = queryset.update(draft=False)
+        if row_update == 1:
+            message_bit = "1 запись обновлена"
+        else:
+            message_bit = f'{row_update} записей обновлено'
+        self.message_user(request, f"{message_bit}")
+
+    publish.short_description = "Опубликовать"
+    publish.allowed_permissions = ("change",)
+
+    unpublish.short_description = "Снять с публикации"
+    unpublish.allowed_permissions = ("change",)
+
 
     get_image.short_description = "Постер"
 
@@ -101,7 +127,7 @@ class ActorAdmin(admin.ModelAdmin):
 
 @admin.register(Rating)
 class RatingAdmin(admin.ModelAdmin):
-    list_display = ("ip", "star")
+    list_display = ("ip", "movie", "star")
 
 
 @admin.register(MovieShots)
